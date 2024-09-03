@@ -31,47 +31,6 @@ pub mod asset_vault {
         msg!("Tokens deposited successfully");
         Ok(())
     }
-
-    pub fn withdraw_tokens(ctx: Context<WithdrawTokens>, amount: u64) -> Result<()> {
-        // Calcula el bump usando find_program_address desde las seeds definidas
-        let (_pda, bump) = Pubkey::find_program_address(&[b"vault".as_ref()], ctx.program_id);
-        msg!("Calculated bump: {}", bump);
-
-        // Definir las seeds con el bump calculado
-        let seeds = &[b"vault".as_ref(), &[bump]];
-        let signer = &[&seeds[..]];
-
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.vault_token_account.to_account_info(),
-            to: ctx.accounts.manager_token_account.to_account_info(),
-            authority: ctx.accounts.vault_data.to_account_info(),
-        };
-
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
-
-        // Realiza la transferencia de tokens
-        token::transfer(cpi_ctx, amount)?;
-        msg!("Tokens withdrawn successfully");
-        Ok(())
-    }
-}
-
-#[derive(Accounts)]
-pub struct WithdrawTokens<'info> {
-    #[account(mut)]
-    pub manager: Signer<'info>, // Asegura que el manager sea un signer
-    #[account(mut)]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub manager_token_account: Account<'info, TokenAccount>,
-    pub token_program: Program<'info, Token>,
-    #[account(
-        seeds = [b"vault".as_ref()],
-        bump,
-        has_one = manager // Confirma que solo el manager puede usar esta cuenta
-    )]
-    pub vault_data: Account<'info, VaultData>, // Debe ser writable y la autoridad correcta
 }
 
 #[derive(Accounts)]
